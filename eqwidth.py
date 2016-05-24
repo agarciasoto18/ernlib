@@ -5,7 +5,7 @@ Created on Mon Mar 14 16:06:19 2016
 @author: enewton
 """
 import numpy as np
-from scipy.integrate import trapz   
+import matplotlib.pyplot as plt  
 
 # ew = simple_fracsum(wave, flux/pseudo-1., c1, c2, mean=mean)
  
@@ -46,46 +46,11 @@ def fracsum(wavea, waveb, flux, c1, c2, mean=False, check=False):
       print flux
     
     integral = np.sum(flux*fracused*pixwidth)
-    print integral
     if mean:
       return integral/np.sum(fracused*pixwidth)
     else:
       return integral
     
-    
-    
-#    # loop over except first and last
-#    totpix = 0.
-#    totflux = 0.
-#    integral = 0.
-#    for i in range(len(wave)-2):
-#      j = i+1
-#      wvplus  = (wave[j] + wave[j+1])/2. # wave upper edge of pix
-#      wvminus = (wave[j] + wave[j-1])/2. # wave lower edge of pix
-#      pixwidth = (wvplus-wvminus)        # size of pixel
-#      # full pixel
-#      if (wvminus>c1) & (wvplus<c2):
-#        frac = 1.
-#      # partial pixel (lower region limit)
-#      elif (wvminus<c1) & (wvplus>c1):
-#        frac = (wvplus-c1)/pixwidth
-#      # partial pixel (upper region limit)
-#      elif (wvminus<c2) & (wvplus>c2):
-#        frac = (wvplus-c2)/pixwidth
-#      else:
-#        frac = 0.
-#        
-#      if frac > 0:
-#        totpix += frac
-#        totflux += flux[j]*frac
-#        integral += flux[j]*frac*pixwidth
-#        if check:
-#          print wave[j], frac, flux[j]
-#        
-#    if mean:
-#      return totflux/totpix
-#    else:
-#      return integral
  
 def simple_fracsum(wave, flux, c1, c2, mean=False):
   
@@ -139,8 +104,8 @@ def measure_ha(wave, flux, trapsum=False):
     fwid = 8.
     feature = [fcen-fwid/2.,fcen+fwid/2.]
     
-    m1 = fracsum(wave, flux, 6500., 6550., mean=True)
-    m2 = fracsum(wave, flux, 6575., 6625., mean=True)
+    m1 = simple_fracsum(wave, flux, 6500., 6550., mean=True)
+    m2 = simple_fracsum(wave, flux, 6575., 6625., mean=True)
     pseudo = (m1+m2)/2.
 
     ew = simple_fracsum(wave, 1.-flux/pseudo, feature[0], feature[1])

@@ -28,10 +28,49 @@ def gen_cov(wave, fwhm):
       
   return cov
 
-# add error based on error on each point and the covariance matrix
-def add_err(e_flux, cov):
+# fill bad pixels with mean of neighbors
+def fill_with_neighbors(array, bad, fill_range=10):
+
+  temp = np.array(array) 
+  assert fill_range>1
   
-  err = np.random.normal(scale=e_flux)
+  for i in bad:
+    for ext in np.arange(1,fill_range+1):
+      neighbors = np.arange(i-ext,i+ext+1, 1)
+      goodneighbors = [n for n in neighbors if n not in bad]
+      if len(goodneighbors)<2:
+        continue
+      else:
+        temp[i] = np.nanmean(array[goodneighbors])
+        print "WARNING specerr: had to go out to ", ext, " neighbors."
+        break
+    else:
+      print "specerr failed. Too many negative errors."
+      return None
+ 
+  return temp
+  
+# add error based on error on each point and the covariance matrix
+def add_err(e_flux, cov, fill=True, fill_range=10):
+  
+  # deal with negative or zero flux errors
+  bad, = np.where( (e_flux>0) == False )
+  if len(bad) != 0:
+    print "WARNING specerr: e_flux has negative elements."
+    # fill...
+    if fill:
+      if isinstance(fill, float):
+        print "WARNING specerr: filling with provided value ", fill
+        temp = np.array(e_flux)
+        temp[bad] = fill
+      else:
+        print "WARNING specerr: filling using neighboring value."
+        temp = fill_with_neighbors(e_flux, bad, fill_range=fill_range)
+    # don't fill...      
+    else:
+      return None
+      
+  err = np.random.normal(scale=temp)
   return np.dot(err, cov) 
 
 # Monte Carlo errors     
@@ -57,8 +96,8 @@ def mc(wave, flux, e_flux,
       new_flux = np.random.normal(loc=flux, scale=tmp)
       print "MC: Did not use covariance matrix."
       
-    myfunction = globals()[function]  #Get the function
-    vals = myfunction(wave, new_flux)
+#    myfunction = globals()[function]  #Get the function
+    vals = function(wave, new_flux)
     if isinstance(vals, float):
       vals = [vals]
     
