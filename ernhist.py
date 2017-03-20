@@ -10,14 +10,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def onehist(arr,  # input array
-            label, histtype='stepfilled', linestyle='solid',
-            ec = 'k', fc = 'None',
-            bins = 10, 
+            histtype='stepfilled', linestyle='solid',
+            bins = 10,
+            fill = False,
             frac = False, # plot as fraction of total
             kde = False, # plot as kernel density?
             bandwidth = 10, # kernel size
             xlim = None,
-            stacked=False) :
+            stacked=False,
+            **kwargs) :
 
   if xlim is None:
     xlim = [np.nanmin(arr),np.nanmax(arr)]
@@ -27,8 +28,7 @@ def onehist(arr,  # input array
     kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth).fit(arr[np.isfinite(arr)].reshape(-1,1))
     log_dens = kde.score_samples(x_plot.reshape(-1,1))
     plt.plot(x_plot, np.exp(log_dens), 
-             color=ec,
-             label=label)
+             **kwargs)
   else:
     if isinstance(arr,list):
       weights = []
@@ -42,12 +42,12 @@ def onehist(arr,  # input array
       if frac:
         weights = weights/len(np.array(arr))
     
-    plt.hist(arr, range=xlim, bins=bins, 
+    vals = plt.hist(arr, range=xlim, bins=bins, 
              histtype=histtype, linestyle=linestyle,
-             weights=weights,
-             ec=ec, fc=fc, 
-             label=label,
-             stacked=stacked)
+             weights=weights, fill=fill,
+             stacked=stacked, **kwargs)
+    
+    return vals
   
   
 def colhist(
