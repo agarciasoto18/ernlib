@@ -45,9 +45,9 @@ def select_xy(x, y, xerr=None, yerr=None, resample=True, replace=True):
     return x_re, y_re
     
 def mcspearman(x, y, xerr=None, yerr=None, resample=True, replace=True, nsamples=1000, debug=False):
-    
-    correlation = np.zeros(nsamples)
-    pvalues = np.zeros(nsamples)
+    print nsamples
+    correlation = np.zeros(int(nsamples))
+    pvalues = np.zeros(int(nsamples))
     for i in np.arange(nsamples):
 
         x_re, y_re = select_xy(x,y, xerr=xerr, yerr=yerr, resample=resample, replace=replace)

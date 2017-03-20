@@ -3,13 +3,22 @@
 Created on Mon Mar 14 16:06:19 2016
 
 @author: enewton
+
+Calculate EWs (and spectral indices) by adding up (or averaging)
+pixels, taking into account partial pixels.
+
+ew = simple_fracsum(wave, flux/pseudo-1., c1, c2, mean=mean)
+
 """
 import numpy as np
 import matplotlib.pyplot as plt  
 
-# ew = simple_fracsum(wave, flux/pseudo-1., c1, c2, mean=mean)
  
 # sum up over a region, with fractions of a pixel
+# wavea = blue edge; waveb = red edge
+# c1 and c2 are the edges of the region of interest
+# mean returns the average of the pixels rather than the sum
+# check makes plots
 def fracsum(wavea, waveb, flux, c1, c2, mean=False, check=False):
   
     pixwidth = waveb-wavea  
@@ -51,7 +60,7 @@ def fracsum(wavea, waveb, flux, c1, c2, mean=False, check=False):
     else:
       return integral
     
- 
+# assume pixel edges are half-way between the central locations
 def simple_fracsum(wave, flux, c1, c2, mean=False):
   
     diff = np.array(wave.flat[1:] - wave.flat[:-1])
@@ -62,7 +71,7 @@ def simple_fracsum(wave, flux, c1, c2, mean=False):
    
     return fracsum(wavea, waveb, flux, c1, c2, mean=mean)
 
-
+# check something simple
 def test():
 
     wavea=np.arange(0,10)
@@ -82,7 +91,7 @@ def test():
   
   
 # Lithium index
-def measure_li(wave, flux, trapz=False):
+def measure_li(wave, flux):
 
     fcen = 6707.8 # 6707.76; 6707.91
     # note iron at 6707.4
@@ -111,7 +120,7 @@ def measure_ha(wave, flux, trapsum=False):
     ew = simple_fracsum(wave, 1.-flux/pseudo, feature[0], feature[1])
     return ew
 
-
+# measure a "Lepine-style" bandstrength
 def bandstrength(wave, flux, num, denom):
     
     num = simple_fracsum(wave, flux, num[0], num[1], mean=True)
@@ -121,7 +130,8 @@ def bandstrength(wave, flux, num, denom):
         return num/denom
     else:
         return None
-    
+
+# measure the relevent bandstrengths    
 def measure_lepine(wave, flux):
     
     CaH2	= bandstrength(wave, flux, [6814,6846], [7042,7046])

@@ -5,7 +5,6 @@ Created on Tue May 24 11:07:56 2016
 @author: enewton
 """
 import numpy as np
-import ernlib.confidence as confidence
 import matplotlib.pyplot as plt
 
 # calculate a Gaussian
@@ -69,6 +68,9 @@ def add_err(e_flux, cov, fill=True, fill_range=10):
     # don't fill...      
     else:
       return None
+  # a-okay!
+  else:
+    temp = np.array(e_flux)
       
   err = np.random.normal(scale=temp)
   return np.dot(err, cov) 
@@ -76,28 +78,38 @@ def add_err(e_flux, cov, fill=True, fill_range=10):
 # Monte Carlo errors     
 def mc(wave, flux, e_flux, 
        function, 
+       rverr=None,
        niter=10,
        check=False,
        interval=68.,
        return_values=False,
-       cov=False):
+       cov=False,
+       return_best=False):
 
   if check:
     flux_arr = np.ndarray([niter,len(flux)]) 
 
   for i in np.arange(0,niter):
   
+    # use covariance matrix to spread errors
     if np.sum(cov):
       err = add_err(e_flux, cov)
       new_flux = np.array(flux)+err
+    # or just do it randomly
     else:
       tmp = np.array(e_flux)
       tmp[e_flux<0.] = np.median(e_flux)
       new_flux = np.random.normal(loc=flux, scale=tmp)
       print "MC: Did not use covariance matrix."
+
+    if rverr is not None:
+      dop = rverr/(3.e5)
+      new_wave = wave*(1.+np.random.normal(scale=dop))
+    else:
+      new_wave = np.array(wave)
       
 #    myfunction = globals()[function]  #Get the function
-    vals = function(wave, new_flux)
+    vals = function(new_wave, new_flux)
     if isinstance(vals, float):
       vals = [vals]
     
@@ -107,7 +119,7 @@ def mc(wave, flux, e_flux,
       vals_arr[i,:] = vals
       if check:
         flux_arr[i,:] = new_flux
-        plt.plot(wave, new_flux, c='k', alpha=0.3)
+        plt.plot(new_wave, new_flux, c='k', alpha=0.3)
           
   if check:
 #    flux_sig = np.std(flux_arr, axis=0)
@@ -116,12 +128,14 @@ def mc(wave, flux, e_flux,
   # calculate confidence limits and error array    
   conf = np.ndarray([len(vals),3])
   err = np.ndarray([len(vals)])
+  med = np.ndarray([len(vals)])
 
   for i in np.arange(len(vals)):
     if np.all(np.isfinite(vals_arr[:,i])):
-      conf[i,:] = confidence.interval(vals_arr[:,i], 
-                                               interval=interval)
+      conf[i,:] = np.percentile(vals_arr[:,i],
+                                [100.-interval, 50., interval])
       err[i] = (conf[i,2]-conf[i,0])/2.
+      med[i] = conf[i,1] # median value
     else:
       conf[i,:] = [np.nan, np.nan, np.nan]
       err[i] = np.nan
@@ -129,4 +143,4 @@ def mc(wave, flux, e_flux,
   if return_values:
       return vals_arr
   else:
-      return err
+      return med, err
